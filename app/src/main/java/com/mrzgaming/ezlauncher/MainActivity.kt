@@ -39,6 +39,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var listView: ListView
 
+    private val badgeColors = mapOf(
+        "Ubuntu 24.04" to 0xFFE95420.toInt(),
+        "Debian 12" to 0xFFA80030.toInt(),
+        "Alpine" to 0xFF0D597F.toInt(),
+        "EZOS" to 0xFF7C4DFF.toInt(),
+        "Custom URL..." to 0xFF555566.toInt()
+    )
+
     inner class DistroAdapter : BaseAdapter() {
         override fun getCount() = distros.size
         override fun getItem(position: Int) = distros[position]
@@ -56,16 +64,10 @@ class MainActivity : AppCompatActivity() {
             nameView.text = distro.name
             iconView.text = if (distro.name == "Custom URL...") "+" else distro.name.take(1)
 
-            val badgeColors = mapOf(
-                "Ubuntu 24.04" to 0xFFE95420.toInt(),
-                "Debian 12" to 0xFFA80030.toInt(),
-                "Alpine" to 0xFF0D597F.toInt(),
-                "EZOS" to 0xFF7C4DFF.toInt(),
-                "Custom URL..." to 0xFF555566.toInt()
-            )
-            (iconView.background as android.graphics.drawable.GradientDrawable).setColor(
-                badgeColors[distro.name] ?: 0xFF555566.toInt()
-            )
+            val bg = iconView.background
+            if (bg is android.graphics.drawable.GradientDrawable) {
+                bg.setColor(badgeColors[distro.name] ?: 0xFF555566.toInt())
+            }
 
             if (distro.name == "Custom URL...") {
                 statusView.text = "Masukkan link rootfs sendiri"
