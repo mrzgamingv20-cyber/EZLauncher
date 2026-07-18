@@ -245,6 +245,8 @@ class MainActivity : AppCompatActivity() {
 
             val pb = ProcessBuilder(fullCommand)
             pb.environment()["PROOT_TMP_DIR"] = cacheDir.absolutePath
+            pb.environment()["PATH"] = "/bin:/usr/bin:/sbin:/usr/sbin"
+            pb.environment()["HOME"] = "/root"
             pb.redirectErrorStream(true)
 
             val process = pb.start()
