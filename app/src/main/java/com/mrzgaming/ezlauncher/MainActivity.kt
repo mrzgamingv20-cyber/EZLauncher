@@ -10,7 +10,6 @@ import android.widget.EditText
 import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -105,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle(distro.name)
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> Toast.makeText(this, "Fitur terminal segera hadir", Toast.LENGTH_SHORT).show()
+                    0 -> testProot(distro.name)
                     1 -> startInstall(distro.name, distro.rootfsUrl)
                     2 -> confirmDelete(distro)
                 }
@@ -212,6 +211,49 @@ class MainActivity : AppCompatActivity() {
                 }
                 entry = tarInput.nextTarEntry
             }
+        }
+    }
+
+    private fun testProot(distroName: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            statusText.text = "Testing proot untuk $distroName..."
+            val result = withContext(Dispatchers.IO) {
+                runProotCommand(distroName, listOf("cat", "/etc/os-release"))
+            }
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Hasil proot: $distroName")
+                .setMessage(result)
+                .setPositiveButton("OK", null)
+                .show()
+        }
+    }
+
+    private fun runProotCommand(distroName: String, command: List<String>): String {
+        return try {
+            val prootBinary = File(applicationInfo.nativeLibraryDir, "libproot.so")
+            val rootfsDir = File(filesDir, "distros/$distroName")
+
+            val fullCommand = mutableListOf(
+                prootBinary.absolutePath,
+                "-0",
+                "-r", rootfsDir.absolutePath,
+                "-b", "/dev",
+                "-b", "/proc",
+                "-w", "/"
+            )
+            fullCommand.addAll(command)
+
+            val pb = ProcessBuilder(fullCommand)
+            pb.environment()["PROOT_TMP_DIR"] = cacheDir.absolutePath
+            pb.redirectErrorStream(true)
+
+            val process = pb.start()
+            val output = process.inputStream.bufferedReader().readText()
+            process.waitFor()
+
+            output.ifBlank { "(tidak ada output, exit code: ${process.exitValue()})" }
+        } catch (e: Exception) {
+            "Error: ${e.message}"
         }
     }
 }
