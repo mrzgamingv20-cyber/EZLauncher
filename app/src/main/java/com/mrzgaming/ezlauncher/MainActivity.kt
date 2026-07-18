@@ -8,6 +8,7 @@ import android.widget.EditText
 import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,10 +51,10 @@ class MainActivity : AppCompatActivity() {
 
         listView.setOnItemClickListener { _, _, position, _ ->
             val selected = distros[position]
-            if (selected.name == "Custom URL...") {
-                showCustomUrlDialog()
-            } else {
-                startInstall(selected.name, selected.rootfsUrl)
+            when {
+                selected.name == "Custom URL..." -> showCustomUrlDialog()
+                isInstalled(selected.name) -> showDistroOptionsDialog(selected)
+                else -> startInstall(selected.name, selected.rootfsUrl)
             }
         }
     }
@@ -69,6 +70,33 @@ class MainActivity : AppCompatActivity() {
         }
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, names)
         listView.adapter = adapter
+    }
+
+    private fun showDistroOptionsDialog(distro: Distro) {
+        val options = arrayOf("Buka Terminal", "Install Ulang", "Hapus")
+        AlertDialog.Builder(this)
+            .setTitle(distro.name)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> Toast.makeText(this, "Fitur terminal segera hadir", Toast.LENGTH_SHORT).show()
+                    1 -> startInstall(distro.name, distro.rootfsUrl)
+                    2 -> confirmDelete(distro)
+                }
+            }
+            .show()
+    }
+
+    private fun confirmDelete(distro: Distro) {
+        AlertDialog.Builder(this)
+            .setTitle("Hapus ${distro.name}?")
+            .setMessage("Semua data di dalam distro ini akan hilang.")
+            .setPositiveButton("Hapus") { _, _ ->
+                File(filesDir, "distros/${distro.name}").deleteRecursively()
+                statusText.text = "${distro.name} dihapus."
+                refreshList()
+            }
+            .setNegativeButton("Batal", null)
+            .show()
     }
 
     private fun showCustomUrlDialog() {
@@ -96,7 +124,6 @@ class MainActivity : AppCompatActivity() {
                 val distroDir = File(filesDir, "distros/$name")
                 distroDir.mkdirs()
 
-                // Cache file per-distro biar gak download ulang tiap testing
                 val archiveFile = File(cacheDir, "rootfs_${name}.cache")
 
                 if (!archiveFile.exists()) {
