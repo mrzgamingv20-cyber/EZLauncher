@@ -2,8 +2,10 @@ package com.mrzgaming.ezlauncher
 
 import android.app.AlertDialog
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ArrayAdapter
+import android.view.ViewGroup
+import android.widget.BaseAdapter
 import android.widget.EditText
 import android.widget.ListView
 import android.widget.ProgressBar
@@ -37,7 +39,36 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var listView: ListView
-    private lateinit var adapter: ArrayAdapter<String>
+
+    inner class DistroAdapter : BaseAdapter() {
+        override fun getCount() = distros.size
+        override fun getItem(position: Int) = distros[position]
+        override fun getItemId(position: Int) = position.toLong()
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+            val view = convertView ?: LayoutInflater.from(this@MainActivity)
+                .inflate(R.layout.list_item_distro, parent, false)
+
+            val distro = distros[position]
+            val nameView = view.findViewById<TextView>(R.id.distroName)
+            val statusView = view.findViewById<TextView>(R.id.distroStatus)
+
+            nameView.text = distro.name
+
+            if (distro.name == "Custom URL...") {
+                statusView.text = "Masukkan link rootfs sendiri"
+                statusView.setTextColor(0xFF888888.toInt())
+            } else if (isInstalled(distro.name)) {
+                statusView.text = "✓ Terinstall"
+                statusView.setTextColor(0xFF4CAF50.toInt())
+            } else {
+                statusView.text = "Belum diinstall"
+                statusView.setTextColor(0xFF888888.toInt())
+            }
+
+            return view
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,11 +96,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshList() {
-        val names = distros.map { d ->
-            if (d.name != "Custom URL..." && isInstalled(d.name)) "${d.name} (terinstall)" else d.name
-        }
-        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, names)
-        listView.adapter = adapter
+        listView.adapter = DistroAdapter()
     }
 
     private fun showDistroOptionsDialog(distro: Distro) {
