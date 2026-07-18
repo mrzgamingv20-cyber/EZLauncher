@@ -214,12 +214,22 @@ class MainActivity : AppCompatActivity() {
             var entry = tarInput.nextTarEntry
             while (entry != null) {
                 val outFile = File(destDir, entry.name)
-                if (entry.isDirectory) {
-                    outFile.mkdirs()
-                } else {
-                    outFile.parentFile?.mkdirs()
-                    FileOutputStream(outFile).use { out ->
-                        tarInput.copyTo(out)
+                when {
+                    entry.isDirectory -> outFile.mkdirs()
+                    entry.isSymbolicLink -> {
+                        outFile.parentFile?.mkdirs()
+                        outFile.delete()
+                        try {
+                            android.system.Os.symlink(entry.linkName, outFile.absolutePath)
+                        } catch (e: Exception) {
+                            // ignore broken symlink creation errors
+                        }
+                    }
+                    else -> {
+                        outFile.parentFile?.mkdirs()
+                        FileOutputStream(outFile).use { out ->
+                            tarInput.copyTo(out)
+                        }
                     }
                 }
                 entry = tarInput.nextTarEntry
