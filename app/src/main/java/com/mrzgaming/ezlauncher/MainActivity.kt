@@ -2,10 +2,12 @@ package com.mrzgaming.ezlauncher
 
 import android.app.AlertDialog
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.ListView
-import android.widget.Toast
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,13 +33,20 @@ class MainActivity : AppCompatActivity() {
         Distro("Custom URL...", "")
     )
 
+    private lateinit var statusText: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var listView: ListView
+    private lateinit var adapter: ArrayAdapter<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        val listView = ListView(this)
-        val names = distros.map { it.name }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, names)
-        listView.adapter = adapter
+        statusText = findViewById(R.id.statusText)
+        progressBar = findViewById(R.id.progressBar)
+        listView = findViewById(R.id.listView)
+
+        refreshList()
 
         listView.setOnItemClickListener { _, _, position, _ ->
             val selected = distros[position]
@@ -47,8 +56,19 @@ class MainActivity : AppCompatActivity() {
                 startInstall(selected.name, selected.rootfsUrl)
             }
         }
+    }
 
-        setContentView(listView)
+    private fun isInstalled(name: String): Boolean {
+        val dir = File(filesDir, "distros/$name")
+        return dir.exists() && (dir.listFiles()?.isNotEmpty() == true)
+    }
+
+    private fun refreshList() {
+        val names = distros.map { d ->
+            if (d.name != "Custom URL..." && isInstalled(d.name)) "${d.name} (terinstall)" else d.name
+        }
+        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, names)
+        listView.adapter = adapter
     }
 
     private fun showCustomUrlDialog() {
@@ -68,31 +88,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startInstall(name: String, url: String) {
-        Toast.makeText(this, "Mulai install $name...", Toast.LENGTH_SHORT).show()
+        progressBar.visibility = View.VISIBLE
+        statusText.text = "Menyiapkan $name..."
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val distroDir = File(filesDir, "distros/$name")
                 distroDir.mkdirs()
 
-                val archiveFile = File(cacheDir, "rootfs_download")
+                // Cache file per-distro biar gak download ulang tiap testing
+                val archiveFile = File(cacheDir, "rootfs_${name}.cache")
 
-                withContext(Dispatchers.IO) {
-                    downloadFile(url, archiveFile)
+                if (!archiveFile.exists()) {
+                    statusText.text = "Mengunduh $name..."
+                    withContext(Dispatchers.IO) {
+                        downloadFile(url, archiveFile)
+                    }
+                } else {
+                    statusText.text = "Pakai cache $name (skip download)..."
                 }
 
-                Toast.makeText(this@MainActivity, "Download selesai, extracting...", Toast.LENGTH_SHORT).show()
+                statusText.text = "Mengekstrak $name..."
 
                 withContext(Dispatchers.IO) {
                     extractArchive(archiveFile, distroDir, url)
                 }
 
-                archiveFile.delete()
-
-                Toast.makeText(this@MainActivity, "$name berhasil diinstall!", Toast.LENGTH_LONG).show()
+                statusText.text = "$name berhasil diinstall!"
+                refreshList()
 
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                statusText.text = "Gagal install $name: ${e.message}"
+            } finally {
+                progressBar.visibility = View.GONE
             }
         }
     }
