@@ -3,20 +3,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212">
+    android:background="#12121A">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:background="#1E1E1E">
+        android:padding="24dp"
+        android:background="@drawable/header_gradient">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="EZLauncher"
-            android:textSize="26sp"
+            android:text="⚡ EZLauncher"
+            android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF" />
 
@@ -26,8 +26,8 @@
             android:layout_height="wrap_content"
             android:text="Pilih distro untuk install"
             android:textSize="14sp"
-            android:textColor="#AAAAAA"
-            android:paddingTop="4dp" />
+            android:textColor="#E0D9FF"
+            android:paddingTop="6dp" />
 
     </LinearLayout>
 
@@ -35,15 +35,19 @@
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="4dp"
         android:visibility="gone"
-        android:indeterminate="true" />
+        android:indeterminate="true"
+        android:progressTint="#7C4DFF" />
 
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:divider="#2A2A2A"
-        android:dividerHeight="1dp" />
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:scrollbars="none" />
 
 </LinearLayout>

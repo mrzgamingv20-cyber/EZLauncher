@@ -51,18 +51,31 @@ class MainActivity : AppCompatActivity() {
             val distro = distros[position]
             val nameView = view.findViewById<TextView>(R.id.distroName)
             val statusView = view.findViewById<TextView>(R.id.distroStatus)
+            val iconView = view.findViewById<TextView>(R.id.distroIcon)
 
             nameView.text = distro.name
+            iconView.text = if (distro.name == "Custom URL...") "+" else distro.name.take(1)
+
+            val badgeColors = mapOf(
+                "Ubuntu 24.04" to 0xFFE95420.toInt(),
+                "Debian 12" to 0xFFA80030.toInt(),
+                "Alpine" to 0xFF0D597F.toInt(),
+                "EZOS" to 0xFF7C4DFF.toInt(),
+                "Custom URL..." to 0xFF555566.toInt()
+            )
+            (iconView.background as android.graphics.drawable.GradientDrawable).setColor(
+                badgeColors[distro.name] ?: 0xFF555566.toInt()
+            )
 
             if (distro.name == "Custom URL...") {
                 statusView.text = "Masukkan link rootfs sendiri"
-                statusView.setTextColor(0xFF888888.toInt())
+                statusView.setTextColor(0xFF888899.toInt())
             } else if (isInstalled(distro.name)) {
-                statusView.text = "✓ Terinstall"
+                statusView.text = "● Terinstall"
                 statusView.setTextColor(0xFF4CAF50.toInt())
             } else {
-                statusView.text = "Belum diinstall"
-                statusView.setTextColor(0xFF888888.toInt())
+                statusView.text = "○ Belum diinstall"
+                statusView.setTextColor(0xFF888899.toInt())
             }
 
             return view
